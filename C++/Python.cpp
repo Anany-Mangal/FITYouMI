@@ -1,45 +1,43 @@
-// Cpp/Python.cpp
-// This C++ program takes a Python file path as input, then generates a new C++ source file.
-// When that C++ file is compiled and executed, it runs the original Python file.
+// C++/Python.hpp
+// This header defines a Convert() function that takes a Python file as input
+// and generates a C++ file that, when compiled and run, executes the Python code.
 
-#include <iostream>
+#ifndef PYTHON_TO_CPP_HPP
+#define PYTHON_TO_CPP_HPP
+
 #include <fstream>
+#include <iostream>
 #include <string>
+#include <filesystem>
+#include <cstdlib>
 
-int main(int argc, char** argv)
+std::string Convert(const std::string& PythonFilePath)
 {
-    if (argc < 2)
+    if (!std::filesystem::exists(PythonFilePath))
     {
-        std::cerr << "Usage: " << argv[0] << " <path_to_python_file>\n";
-        return 1;
+        throw std::runtime_error("Python file not found: " + PythonFilePath);
     }
 
-    std::string PythonFilePath = argv[1];
-    std::ifstream TestInput(PythonFilePath);
-    if (!TestInput.good())
-    {
-        std::cerr << "Error: File not found - " << PythonFilePath << "\n";
-        return 1;
-    }
-    TestInput.close();
+    std::string OutputCpp = "GeneratedPythonWrapper.cpp";
+    std::ofstream Out(OutputCpp);
 
-    std::ofstream Out("GeneratedPythonWrapper.cpp");
     if (!Out.is_open())
     {
-        std::cerr << "Error: Could not create output file.\n";
-        return 1;
+        throw std::runtime_error("Failed to create C++ output file");
     }
 
     Out << "#include <cstdlib>\n";
     Out << "#include <iostream>\n\n";
     Out << "int main() {\n";
-    Out << "    std::cout << \"Running Python script...\\n\";\n";
     Out << "    int Result = std::system(\"python3 " << PythonFilePath << "\");\n";
+    Out << "    if (Result != 0) {\n";
+    Out << "        std::cerr << \"Failed to execute Python file.\\n\";\n";
+    Out << "    }\n";
     Out << "    return Result;\n";
     Out << "}\n";
 
     Out.close();
-    std::cout << "Generated C++ wrapper: GeneratedPythonWrapper.cpp\n";
-
-    return 0;
+    return OutputCpp;
 }
+
+#endif // PYTHON_TO_CPP_HPP
